@@ -184,4 +184,53 @@ router.post('/driver/login', function (req, res) {
         }
     });
 });
+
+router.post('/driver/list', function (req, res) {
+    console.log('driver-list / req.body', JSON.stringify(req.body));
+
+    let userId = req.body.userId;
+    console.log('driver-list / userId = ' + userId);
+
+    let queryStr = `select * from tb_call where driver_id="${userId}" or call_state="REQ" order by id desc`;
+    console.log('driver-list / queryStr = ' + queryStr);
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('driver-list / rows' + JSON.stringify(rows));
+            let code = 0;
+            res.json([{ code: code, message: '택시 호출 목록 호출 성공', data: rows }]);
+        } else {
+            console.log('driver-list / err' + err);
+            res.json([{ code: 1, message: '알 수 없는 오류가 발생하였습니다', data: err }]);
+        }
+    });
+});
+
+router.post('/driver/accept', function (req, res) {
+    console.log('driver-accept / req.body' + JSON.stringify(req.body));
+
+    let callId = req.body.callId;
+    let driverId = req.body.driverId;
+
+    console.log('driver-accept / callId = ' + callId + 'diverId = ' + driverId);
+
+    if (!(callId && driverId)) {
+        res.json([{ code: 1, message: 'callId 또는 driverId가 없습니다' }]);
+        return;
+    }
+    let queryStr = `update tb_call set driver_id="${driverId}", call_state="RES" where id="${callId}"`;
+    console.log('driver-accept / queryStr = ' + queryStr);
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('driver-accept / rows' + JSON.stringify(rows));
+            if (rows.affectedRows > 0) {
+                res.json([{ code: 0, message: '배차가 완료되었습니다' }]);
+            } else {
+                res.json([{ code: 2, message: '이미 완료되었거나 존재하지 않는 콜 입니다.' }]);
+            }
+        } else {
+            console.log('driver-accept / err' + JSON.stringify(err));
+            res.json([{ code: 3, message: '알 수 없는 오류가 발생하였습니다', data: err }]);
+        }
+    });
+});
 module.exports = router;
