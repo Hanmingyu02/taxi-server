@@ -127,4 +127,61 @@ router.post('/taxi/call', function (req, res) {
         }
     });
 });
+
+router.post('/driver/register', function (req, res) {
+    console.log('driver-register / req.body' + JSON.stringify(req.body));
+
+    let userId = req.body.userId;
+    let userPw = req.body.userPw;
+
+    console.log('driver-register / userId = ' + userId + userPw);
+
+    if (!(userId && userPw)) {
+        res.json([{ code: 1, message: '아이디 또는 비밀번호가 없습니다' }]);
+        return;
+    }
+
+    let queryStr = `insert into tb_driver values("${userId}","${userPw}","")`;
+    console.log('driver-register / queryStr : ' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('driver-register / rows', JSON.stringify(rows));
+            res.json([{ code: 0, message: '회원가입이 완료되었습니다' }]);
+        } else {
+            console.log('driver-register / err', JSON.stringify(err));
+            if (err.code == 'ER_DUP_ENTRY') {
+                res.json([{ code: 2, message: '이미 등록된 아이디 입니다' }]);
+            } else {
+                res.json([{ code: 3, message: '알 수 없는 오류가 발생하였습니다', data: err }]);
+            }
+        }
+    });
+});
+
+router.post('/driver/login', function (req, res) {
+    console.log('driver-login / req.body', JSON.stringify(req.body));
+
+    let userId = req.body.userId;
+    let userPw = req.body.userPw;
+
+    let queryStr = `select * from tb_driver where driver_id="${userId}" and driver_pw="${userPw}"`;
+    console.log('driver-login / queryStr :' + queryStr);
+
+    db.query(queryStr, function (err, rows, fields) {
+        if (!err) {
+            console.log('driver-login / rows = ' + JSON.stringify(rows));
+            let len = Object.keys(rows).length;
+            console.log('driver-login / len = ' + len);
+
+            let code = len == 0 ? 1 : 0;
+            let message = len == 0 ? '아이디 또는 비밀번호가 잘못 입력되었습니다' : '로그인 성공';
+
+            res.json([{ code: code, message: message }]);
+        } else {
+            console.log('driver-login / err : ' + err);
+            res.json([{ code: 1, message: err }]);
+        }
+    });
+});
 module.exports = router;
